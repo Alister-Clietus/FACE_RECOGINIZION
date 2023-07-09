@@ -1,12 +1,12 @@
 import os
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import ImageUploadSerializer
 from .face_recognition import train_face_recognition,test_single_image
-from django.views import View
 from django.http import JsonResponse
 from PIL import Image
-from face_recoginition.models import FaceEmbedding
+import pickle
+import json
 
 
 class KnownImageUploadAPI(APIView):
@@ -47,7 +47,25 @@ class UnknownImageUploadAPI(APIView):
             image.save(image_path)
             # Pass the image path to the model for prediction
 
-            prediction = test_single_image(clf,le,face_db)
+            file_path_1 = './face_recoginition/emb/embeddings.pickle'
+            file_path_2 = './face_recoginition/emb/svm.pickle'
+            file_path_3 = './face_recoginition/emb/label.pickle'
+
+            # Load the pickled file
+            with open(file_path_1, 'rb') as file:
+                embeddings = pickle.load(file)
+
+            with open(file_path_2, 'rb') as file:
+                clf = pickle.load(file)
+
+            with open(file_path_3, 'rb') as file:
+                le = pickle.load(file)
+
+            print(embeddings)
+            print(clf)
+            print(le)
+
+            prediction = test_single_image(clf,le,embeddings)
 
             # Delete the temporary image file
             os.remove(image_path)
@@ -59,23 +77,20 @@ class UnknownImageUploadAPI(APIView):
 
 class RetrieveModelStatus(APIView):
     def get(self, request):
-            # Retrieve the face embeddings from the database
-            FaceEmbedding.objects.all().delete()
+            file_path = './face_recoginition/emb/embeddings.pickle'
 
-            # Retrieve the data from the FaceEmbedding table
-            embeddings = FaceEmbedding.objects.all()
-            data = []
-            for embedding in embeddings:
-                person_id = embedding.person_id
-                person_name = embedding.person_name
-                embedding_data = embedding.embedding
+            # Load the pickled file
+            with open(file_path, 'rb') as file:
+                embeddings = pickle.load(file)
 
-                data.append({
-                'person_id': person_id,
-                'person_name': person_name,
-                'embedding': embedding_data,
-                })
+            # embeddings = embeddings.tolist()
 
-            # Return the retrieved data as a response
-            return Response(data)
+            # Print the retrieved content
+            print(embeddings)
+
+            # Convert the embeddings to JSON
+            # embeddings_json = json.dumps(embeddings)
+
+            # Return the JSON representation
+            return embeddings
 

@@ -6,10 +6,10 @@ import torch
 from facenet_pytorch import MTCNN, InceptionResnetV1, extract_face
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
-from .models import FaceEmbedding
 import pickle
 import random
 import string
+from PIL import Image
 
 
 def get_person_id_from_name(person_name):
@@ -80,24 +80,41 @@ def train_face_recognition(train_dir):
             face_db[person] = np.mean(emb_list, axis=0)
 
 
-    # Save the face embeddings in the database
-    for person, embedding in face_db.items():
-        person_id = get_person_id_from_name(person)  # Replace this with your logic to get the person's ID from the name
-        embedding_instance = FaceEmbedding(person_id=person_id, person_name=person, embedding=embedding)
-        embedding_instance.save()
+    # # Save the face embeddings in the database
+    #     for person in face_db.items():
+    #         person_id = get_person_id_from_name(person)  # Replace this with your logic to get the person's ID from the name
+    #         embedding_instance = FaceEmbedding(person_id=person_id, person_name=person)
+    #         embedding_instance.save()
+
+        folder_path = "./face_recoginition/emb"
+        file_path = os.path.join(folder_path, 'embeddings.pickle')
+
+        with open(file_path, 'wb') as file:
+             pickle.dump(face_db, file)
+        
+        file_path = os.path.join(folder_path, 'svm.pickle')
+
+        with open(file_path, 'wb') as file:
+             pickle.dump(clf, file)
+
+        file_path = os.path.join(folder_path, 'label.pickle')
+
+        with open(file_path, 'wb') as file:
+             pickle.dump(le, file)
 
     return clf, le, face_db 
 
 
 def test_single_image(clf, le, face_db):
-    image_path='./face_app/face_test/uploaded_image.jpg'
+    image_path='./face_recoginition/face_test/uploaded_image.jpg'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     mtcnn = MTCNN(image_size=160, margin=0, min_face_size=20, thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True, device=device)
     resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     
     THRESHOLD_INSIGHTFACE = 0.9  # Threshold for InsightFace
     THRESHOLD_FACENET = 1.0  # Threshold for Facenet
-
+    image = Image.open(image_path)
+    image.show()
     model = insightface.app.FaceAnalysis()
     ctx_id = 0  # to use GPU
     model.prepare(ctx_id=ctx_id)

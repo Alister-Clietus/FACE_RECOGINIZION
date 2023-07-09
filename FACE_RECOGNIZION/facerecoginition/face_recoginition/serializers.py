@@ -1,15 +1,15 @@
 
 
 from rest_framework import serializers
-from .models import UploadedImage,FaceEmbedding
+from .models import UploadedImage
 
 class ImageUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = UploadedImage
         fields = ['name', 'description', 'image']
 
-class FaceEmbeddingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FaceEmbedding
-        fields = '__all__'
+# class FaceEmbeddingSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = FaceEmbedding
+#         fields = '__all__'
 
